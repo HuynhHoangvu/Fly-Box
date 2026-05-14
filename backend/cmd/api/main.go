@@ -77,9 +77,15 @@ func main() {
 	})
 	routes.Register(r, ctl, jwtMgr, enforcer)
 
-	addr := ":" + cfg.AppPort
-	log.Printf("server starting on %s", addr)
+	addr := "0.0.0.0:" + cfg.AppPort
+	log.Printf("Server is starting on %s...", addr)
+	
+	// Print a message when the server is actually running
+	go func() {
+		log.Printf("Fly-Box Backend is ready and listening on %s", addr)
+	}()
+
 	if err := r.Run(addr); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Critical error: %v", err)
 	}
 }
