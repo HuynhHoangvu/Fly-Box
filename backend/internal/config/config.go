@@ -59,7 +59,7 @@ func Load() Config {
 	}
 
 	return Config{
-		AppPort:             getEnv("APP_PORT", "8081"),
+		AppPort:             getEnv("PORT", getEnv("APP_PORT", "8081")),
 		DatabaseURL:         getEnv("DATABASE_URL", "host=localhost user=postgres password=123456 dbname=flybox port=5436 sslmode=disable"),
 		JWTSecret:           getEnv("JWT_SECRET", "dev-secret"),
 		FrontendURL:         frontendURL,

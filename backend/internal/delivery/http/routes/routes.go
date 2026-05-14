@@ -9,6 +9,14 @@ import (
 )
 
 func Register(r *gin.Engine, ctl *controllers.Controller, jwtMgr *middlewares.JWTManager, enforcer *casbin.Enforcer) {
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Welcome to Fly-Box API",
+			"status":  "running",
+			"version": "1.0.0",
+		})
+	})
+
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
