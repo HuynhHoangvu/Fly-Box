@@ -30,23 +30,24 @@ type Config struct {
 }
 
 func Load() Config {
-	// Use ngrok URL if available, otherwise fall back to localhost
-	// Also check common ngrok environment variables
-	ngrokURL := os.Getenv("NGROK_URL")
-	if ngrokURL == "" {
-		ngrokURL = os.Getenv("NGROK_STATIC_SUBDOMAIN")
-	}
-	if ngrokURL == "" {
-		ngrokURL = os.Getenv("NGROK_HOSTNAME")
-	}
-	if ngrokURL == "" && os.Getenv("NGROK_AUTHTOKEN") != "" {
-		// If ngrok is being used but we don't have the URL, use placeholder
-		ngrokURL = "https://your-ngrok-url.ngrok-free.dev"
-	}
-
-	frontendURL := getEnv("FRONTEND_URL", "http://localhost:5173")
-	if ngrokURL != "" {
-		frontendURL = ngrokURL
+	// FRONTEND_URL takes priority - only use NGROK_URL as fallback if FRONTEND_URL is not set
+	frontendURL := getEnv("FRONTEND_URL", "")
+	
+	// Only use ngrok as fallback for local development
+	if frontendURL == "" {
+		ngrokURL := os.Getenv("NGROK_URL")
+		if ngrokURL == "" {
+			ngrokURL = os.Getenv("NGROK_STATIC_SUBDOMAIN")
+		}
+		if ngrokURL == "" {
+			ngrokURL = os.Getenv("NGROK_HOSTNAME")
+		}
+		if ngrokURL != "" {
+			frontendURL = ngrokURL
+		} else {
+			// Default fallback for local development
+			frontendURL = "http://localhost:5173"
+		}
 	}
 
 	// Facebook app configuration
