@@ -1,0 +1,52 @@
+{
+  "name": "fly-box-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@react-oauth/google": "^0.12.1",
+    "@tanstack/react-query": "^5.17.0",
+    "axios": "^1.6.5",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.14.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.75.0",
+    "react-icons": "^5.0.1",
+    "react-router-dom": "^6.21.3",
+    "recharts": "^2.10.4",
+    "socket.io-client": "^4.7.4",
+    "typescript": "^4.9.5",
+    "web-vitals": "^3.5.1",
+    "zod": "^4.4.3",
+    "zustand": "^4.5.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.2.0"
+  }
+}

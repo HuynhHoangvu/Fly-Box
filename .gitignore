@@ -1,0 +1,9 @@
+.blackboxcli/
+node_modules/
+.env
+.cache/
+build/
+dist/
+*.log
+.vscode/
+.idea/

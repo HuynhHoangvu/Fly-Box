@@ -1,0 +1,128 @@
+.dashboard-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-page h1 {
+  margin: 0 0 24px;
+  font-size: 24px;
+}
+
+.dashboard-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #6b7280;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card.highlight {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.metric-icon {
+  font-size: 36px;
+  margin-right: 16px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.metric-label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.chart-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-card h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #374151;
+}
+
+.activity-section {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.activity-section h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #374151;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-activity {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+}
+
+.activity-platform {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  margin-right: 12px;
+  text-transform: capitalize;
+}
+
+.activity-action {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: #9ca3af;
+}

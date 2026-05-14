@@ -1,0 +1,198 @@
+.notification-center {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.center-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.center-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.mark-all-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.mark-all-btn:hover {
+  background-color: #2563eb;
+}
+
+.filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 12px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notification-center .empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: #f9fafb;
+  border-radius: 12px;
+}
+
+.notification-center .empty-state span {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.notification-center .empty-state h3 {
+  margin: 0 0 8px;
+  color: #374151;
+}
+
+.notification-center .empty-state p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.notification-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.notification-card.unread {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.card-icon {
+  font-size: 32px;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.platform-badge,
+.type-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.platform-badge {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.type-badge {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.time {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-left: auto;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.card-body {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.unread-indicator {
+  width: 8px;
+  height: 8px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+}
+
+.load-more-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: background-color 0.2s;
+}
+
+.load-more-btn:hover {
+  background-color: #e5e7eb;
+}
