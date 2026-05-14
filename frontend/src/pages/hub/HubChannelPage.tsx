@@ -50,6 +50,8 @@ const PLATFORMS = [
 export const HubChannelPage: React.FC = () => {
   const [pages, setPages] = useState<SocialPage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const fetchConnectedPages = async () => {
     setLoading(true);
@@ -65,7 +67,45 @@ export const HubChannelPage: React.FC = () => {
 
   useEffect(() => {
     fetchConnectedPages();
+
+    // Listen for OAuth callback from popup
+    const handleOAuthCallback = async (event: MessageEvent) => {
+      if (event.data?.type === 'FB_OAUTH_SUCCESS') {
+        const { code, state } = event.data;
+        await completeFacebookConnect(code, state);
+      }
+    };
+
+    // Check for stored OAuth data
+    const storedCode = sessionStorage.getItem('fb_oauth_code');
+    const storedState = sessionStorage.getItem('fb_oauth_state');
+    if (storedCode && storedState) {
+      sessionStorage.removeItem('fb_oauth_code');
+      sessionStorage.removeItem('fb_oauth_state');
+      completeFacebookConnect(storedCode, storedState);
+    }
+
+    window.addEventListener('message', handleOAuthCallback);
+    return () => window.removeEventListener('message', handleOAuthCallback);
   }, []);
+
+  const completeFacebookConnect = async (code: string, state: string) => {
+    setConnecting('facebook');
+    try {
+      await pagesAPI.completeConnect({
+        platform: 'facebook',
+        code,
+        state,
+        page_id: '',
+      });
+      setNotification({ type: 'success', message: 'Kết nối Facebook thành công!' });
+      fetchConnectedPages();
+    } catch (error: any) {
+      setNotification({ type: 'error', message: error?.response?.data?.error || 'Kết nối Facebook thất bại' });
+    } finally {
+      setConnecting(null);
+    }
+  };
 
   const getPlatformConnections = (platformId: string) => {
     return pages.filter(p => p.platform === platformId);
@@ -73,22 +113,39 @@ export const HubChannelPage: React.FC = () => {
 
   const handleConnect = async (platformId: string) => {
     try {
-      setLoading(true);
+      setConnecting(platformId);
       const { data } = await pagesAPI.connect(platformId);
       
       if (data.data && data.data.auth_url) {
-        window.location.href = data.data.auth_url;
+        // Open OAuth in popup window
+        const width = 600;
+        const height = 700;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        const popup = window.open(
+          data.data.auth_url,
+          'oauth_popup',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+        );
+
+        // Listen for the callback in the popup
+        const checkPopup = setInterval(() => {
+          if (!popup || popup.closed) {
+            clearInterval(checkPopup);
+            setConnecting(null);
+          }
+        }, 1000);
       } else if (data.data && data.data.manual) {
         alert(data.data.message || 'Tính năng này đang được phát triển hoặc cần cấu hình thêm!');
-        setLoading(false);
+        setConnecting(null);
       } else {
         alert('Không thể lấy được đường dẫn kết nối!');
-        setLoading(false);
+        setConnecting(null);
       }
     } catch (error) {
       console.error('Lỗi khi kết nối kênh:', error);
-      alert('Đã xảy ra lỗi khi yêu cầu kết nối kênh.');
-      setLoading(false);
+      setConnecting(null);
     }
   };
 
@@ -98,6 +155,7 @@ export const HubChannelPage: React.FC = () => {
   const renderPlatformCard = (platform: typeof PLATFORMS[0]) => {
     const connections = getPlatformConnections(platform.id);
     const isConnected = connections.length > 0;
+    const isConnecting = connecting === platform.id;
 
     return (
       <div key={platform.id} className="channel-card" data-platform={platform.id}>
@@ -130,6 +188,7 @@ export const HubChannelPage: React.FC = () => {
                 <button 
                   className="btn-add-more"
                   onClick={() => handleConnect(platform.id)}
+                  disabled={isConnecting}
                 >
                   <Plus size={16} /> Thêm
                 </button>
@@ -139,8 +198,17 @@ export const HubChannelPage: React.FC = () => {
             <button 
               className={`btn-connect ${['facebook', 'zalo'].includes(platform.id) ? 'primary-action' : ''}`}
               onClick={() => handleConnect(platform.id)}
+              disabled={isConnecting}
             >
-              <Plus size={18} /> Kết nối {platform.name}
+              {isConnecting ? (
+                <>
+                  <RefreshCw size={18} className="spin" /> Đang kết nối...
+                </>
+              ) : (
+                <>
+                  <Plus size={18} /> Kết nối {platform.name}
+                </>
+              )}
             </button>
           )}
         </div>
@@ -150,6 +218,12 @@ export const HubChannelPage: React.FC = () => {
 
   return (
     <div className="hub-page-wrapper">
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+          <button onClick={() => setNotification(null)}>×</button>
+        </div>
+      )}
       <div className="hub-container">
         <div className="hub-header">
           <div className="hub-logo">
