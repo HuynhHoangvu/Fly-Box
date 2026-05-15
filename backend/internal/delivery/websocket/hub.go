@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	gws "github.com/gorilla/websocket"
 )
@@ -58,6 +59,25 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 		h.register(pageID, conn)
 		defer h.unregister(pageID, conn)
 	}
+
+	// Set up ping/pong handler to keep connection alive
+	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
+	// Start ping ticker in goroutine
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			if err := conn.WriteMessage(gws.PingMessage, nil); err != nil {
+				return
+			}
+			<-ticker.C
+		}
+	}()
 
 	for {
 		_, _, err := conn.ReadMessage()
