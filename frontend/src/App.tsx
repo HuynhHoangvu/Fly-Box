@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { MainAppShell } from './components/layout/MainAppShell';
+import { WebSocketProvider } from './contexts/WebSocketContext';
+import { useAuthStore } from './store/useAuthStore';
 
 // Lazy load pages for better performance
 const HubChannelPage = lazy(() => import('./pages/hub/HubChannelPage').then(m => ({ default: m.HubChannelPage })));
@@ -22,33 +24,44 @@ const PageLoader = () => (
   </div>
 );
 
+const AppContent: React.FC = () => {
+  const user = useAuthStore(s => s.user);
+  const userId = user ? Number(user.id) : undefined;
+
+  return (
+    <WebSocketProvider userId={userId}>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/connect/callback" element={<FacebookConnectCallbackPage />} />
+          
+          {/* Protected Routes */}
+          <Route path="/" element={<MainAppShell />}>
+            <Route index element={<Navigate to="/hub/channels" replace />} />
+            <Route path="hub/channels" element={<HubChannelPage />} />
+            <Route path="inbox" element={<InboxPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="notifications" element={<NotificationCenter />} />
+            <Route path="post" element={<div className="workspace"><h1>Post</h1></div>} />
+            <Route path="automation" element={<div className="workspace"><h1>Automation</h1></div>} />
+            <Route path="customers" element={<div className="workspace"><h1>Customers</h1></div>} />
+            <Route path="settings" element={<div className="workspace"><h1>Settings</h1></div>} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/hub/channels" replace />} />
+
+        </Routes>
+      </Suspense>
+    </WebSocketProvider>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Auth Routes */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/connect/callback" element={<FacebookConnectCallbackPage />} />
-            
-            {/* Protected Routes */}
-            <Route path="/" element={<MainAppShell />}>
-              <Route index element={<Navigate to="/hub/channels" replace />} />
-              <Route path="hub/channels" element={<HubChannelPage />} />
-              <Route path="inbox" element={<InboxPage />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="notifications" element={<NotificationCenter />} />
-              <Route path="post" element={<div className="workspace"><h1>Post</h1></div>} />
-              <Route path="automation" element={<div className="workspace"><h1>Automation</h1></div>} />
-              <Route path="customers" element={<div className="workspace"><h1>Customers</h1></div>} />
-              <Route path="settings" element={<div className="workspace"><h1>Settings</h1></div>} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/hub/channels" replace />} />
-
-          </Routes>
-        </Suspense>
+        <AppContent />
       </BrowserRouter>
     </GoogleOAuthProvider>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useWebSocketListener } from '../contexts/WebSocketContext';
 import { ChannelConnect } from '../components/Connect/ChannelConnect';
 import { InboxList } from '../components/Inbox/InboxList';
 import { MessagePanel } from '../components/Inbox/MessagePanel';
@@ -33,14 +33,11 @@ export function InboxPage() {
     refresh: refreshConversations 
   } = useConversations(userId);
 
-  // WebSocket for real-time updates
-  const { connected } = useWebSocket({
-    userId,
-    onNewMessage: useCallback((msg: Message) => {
-      console.log('[InboxPage] Received new message:', msg);
-      refreshConversations();
-    }, [refreshConversations])
-  });
+  // WebSocket listener for new messages
+  useWebSocketListener<Message>('NEW_MESSAGE', useCallback((msg) => {
+    console.log('[InboxPage] Received new message:', msg);
+    refreshConversations();
+  }, [refreshConversations]));
 
   useEffect(() => {
     async function fetchData() {
