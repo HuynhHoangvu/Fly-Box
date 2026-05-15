@@ -29,6 +29,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// min returns the smaller of x or y
+func minInt(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
 type Controller struct {
 	Repo                  *repository.Repository
 	Svc                   *usecase.Service
@@ -591,20 +599,29 @@ func (ctl *Controller) VerifyFacebookWebhook(c *gin.Context) {
 	token := c.Query("hub.verify_token")
 	challenge := c.Query("hub.challenge")
 
+	log.Printf("[facebook-verify] mode=%s token=%s expected=%s", mode, token, ctl.FBToken)
+
 	if mode == "subscribe" && token == ctl.FBToken {
+		log.Printf("[facebook-verify] SUCCESS - returning challenge")
 		c.String(http.StatusOK, challenge)
 		return
 	}
+	log.Printf("[facebook-verify] FAILED - invalid token")
 	c.JSON(http.StatusForbidden, gin.H{"error": "invalid verify token"})
 }
 
 func (ctl *Controller) FacebookWebhook(c *gin.Context) {
+	log.Printf("[facebook-webhook] ===== INCOMING WEBHOOK =====")
+	
 	// Read raw body for signature verification
 	rawBody, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		log.Printf("[facebook-webhook] ERROR: cannot read body: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot read body"})
 		return
 	}
+
+	log.Printf("[facebook-webhook] Raw body length: %d bytes", len(rawBody))
 
 	// Verify webhook signature (X-Hub-Signature-256)
 	signature := c.GetHeader("X-Hub-Signature-256")
@@ -615,47 +632,65 @@ func (ctl *Controller) FacebookWebhook(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "invalid signature"})
 			return
 		}
+		log.Printf("[facebook-webhook] Signature verified OK")
+	} else {
+		log.Printf("[facebook-webhook] WARNING: No signature header (dev mode?)")
 	}
 
 	// Parse webhook payload using platform types
 	payload, err := fb.ParseWebhookPayload(rawBody)
 	if err != nil {
+		log.Printf("[facebook-webhook] ERROR: invalid payload: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
 
+	log.Printf("[facebook-webhook] Parsed payload: object=%s entry_count=%d", payload.Object, len(payload.Entry))
+
 	// Extract normalized messages
 	messages := fb.ExtractMessages(payload)
+	log.Printf("[facebook-webhook] Extracted %d messages", len(messages))
 
 	processed := 0
-	for _, m := range messages {
+	for i, m := range messages {
+		log.Printf("[facebook-webhook] Message %d: PagePlatformID=%s SenderPlatformID=%s Text=%s", 
+			i, m.PagePlatformID, m.SenderPlatformID, m.Text[:minInt(50, len(m.Text))])
+		
 		if m.PagePlatformID == "" || m.SenderPlatformID == "" {
+			log.Printf("[facebook-webhook] Message %d: SKIPPED - missing IDs", i)
 			continue
 		}
 
 		page, err := ctl.Repo.GetPageByPageID("facebook", m.PagePlatformID)
 		if err != nil || page == nil {
+			log.Printf("[facebook-webhook] Message %d: SKIPPED - page not found in DB (PagePlatformID=%s)", i, m.PagePlatformID)
 			continue
 		}
+		log.Printf("[facebook-webhook] Message %d: Found page ID=%d Name=%s", i, page.ID, page.PageName)
 
 		customer, err := ctl.Repo.GetOrCreateCustomer("facebook", m.SenderPlatformID)
 		if err != nil || customer == nil {
+			log.Printf("[facebook-webhook] Message %d: SKIPPED - cannot create customer: %v", i, err)
 			continue
 		}
+		log.Printf("[facebook-webhook] Message %d: Customer ID=%d Name=%s", i, customer.ID, customer.Name)
 
 		// Enrich customer name from Facebook profile if still using platform ID as name
-		if customer.Name == m.SenderPlatformID && page.AccessToken != "" {
+		if customer.Name == m.SenderPlatformID && page.AccessToken != "" && page.AccessToken != "mock_token" {
 			go ctl.enrichCustomerName(page.AccessToken, customer)
 		}
 
 		conv, err := ctl.Repo.GetOrCreateConversation(page.ID, customer.ID)
 		if err != nil || conv == nil {
+			log.Printf("[facebook-webhook] Message %d: SKIPPED - cannot create conversation: %v", i, err)
 			continue
 		}
+		log.Printf("[facebook-webhook] Message %d: Conversation ID=%d", i, conv.ID)
 
 		// Deduplicate by social message ID
 		if m.MessageID != "" {
 			if _, err := ctl.Repo.GetMessageBySocialMessageID(m.MessageID); err == nil {
+				log.Printf("[facebook-webhook] Message %d: SKIPPED - duplicate message ID=%s", i, m.MessageID)
 				continue
 			}
 		}
@@ -674,14 +709,17 @@ func (ctl *Controller) FacebookWebhook(c *gin.Context) {
 			CreatedAt:       time.Now(),
 		}
 		if err := ctl.Repo.CreateMessage(msg); err != nil {
+			log.Printf("[facebook-webhook] Message %d: SKIPPED - cannot save message: %v", i, err)
 			continue
 		}
+		log.Printf("[facebook-webhook] Message %d: SAVED - Message ID=%d", i, msg.ID)
 
 		conv.LastMessage = content
 		conv.UnreadCount = conv.UnreadCount + 1
 		conv.UpdatedAt = time.Now()
 		_ = ctl.Repo.SaveConversation(conv)
 
+		log.Printf("[facebook-webhook] Message %d: Broadcasting to page %d", i, page.ID)
 		ctl.Hub.Broadcast(page.ID, ws.Event{
 			Type:   "NEW_MESSAGE",
 			PageID: page.ID,
