@@ -103,81 +103,124 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      <h1>📊 Dashboard</h1>
+      <div className="dashboard-header">
+        <div className="header-info">
+          <h1>Tổng quan hệ thống</h1>
+          <p>Dữ liệu tổng hợp từ tất cả các kênh kết nối.</p>
+        </div>
+        <div className="header-actions">
+          <button className="btn-secondary">7 ngày qua</button>
+          <button className="btn-primary">Xuất báo cáo</button>
+        </div>
+      </div>
 
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-icon">📱</div>
+          <div className="metric-icon blue">📱</div>
           <div className="metric-content">
-            <div className="metric-value">{stats.totalPages}</div>
             <div className="metric-label">Trang đã kết nối</div>
+            <div className="metric-value">{stats.totalPages}</div>
+            <div className="metric-trend up">↑ 12% so với tháng trước</div>
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-icon">💬</div>
+          <div className="metric-icon green">💬</div>
           <div className="metric-content">
+            <div className="metric-label">Tổng hội thoại</div>
             <div className="metric-value">{stats.totalConversations}</div>
-            <div className="metric-label">Hội thoại</div>
+            <div className="metric-trend up">↑ 5% so với tháng trước</div>
           </div>
         </div>
         <div className="metric-card highlight">
-          <div className="metric-icon">🔔</div>
+          <div className="metric-icon yellow">🔔</div>
           <div className="metric-content">
-            <div className="metric-value">{stats.totalUnread}</div>
             <div className="metric-label">Tin nhắn chưa đọc</div>
+            <div className="metric-value">{stats.totalUnread}</div>
+            <div className="metric-trend down">↓ 2% mục tiêu</div>
+          </div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-icon purple">⏱️</div>
+          <div className="metric-content">
+            <div className="metric-label">Phản hồi trung bình</div>
+            <div className="metric-value">4.5m</div>
+            <div className="metric-trend up">↑ 0.5m nhanh hơn</div>
           </div>
         </div>
       </div>
 
       <div className="charts-grid">
         <div className="chart-card">
-          <h3>Tin nhắn theo ngày</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={stats.weeklyMessages}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="messages" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="chart-header">
+            <h3>Lưu lượng tin nhắn</h3>
+            <span>Tin nhắn theo ngày</span>
+          </div>
+          <div className="chart-body">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.weeklyMessages}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <Tooltip 
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="messages" fill="var(--primary)" radius={[6, 6, 0, 0]} barSize={32} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div className="chart-card">
-          <h3>Phân bố nền tảng</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={stats.platformDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={90}
-                paddingAngle={2}
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {stats.platformDistribution.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="chart-header">
+            <h3>Nguồn khách hàng</h3>
+            <span>Phân bố theo nền tảng</span>
+          </div>
+          <div className="chart-body">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={stats.platformDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={70}
+                  outerRadius={100}
+                  paddingAngle={8}
+                  dataKey="value"
+                >
+                  {stats.platformDistribution.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      <div className="activity-section">
-        <h3>Hoạt động gần đây</h3>
+      <div className="activity-section card">
+        <div className="card-header">
+          <h3>Hoạt động gần đây</h3>
+          <button className="btn-text">Xem tất cả</button>
+        </div>
         <div className="activity-list">
           {stats.recentActivity.length === 0 ? (
-            <div className="empty-activity">Chưa có hoạt động nào</div>
+            <div className="empty-activity">
+              <div className="empty-icon">📂</div>
+              <p>Chưa có hoạt động nào được ghi nhận</p>
+            </div>
           ) : (
             stats.recentActivity.map((activity, index) => (
               <div key={index} className="activity-item">
-                <span className="activity-platform">{activity.platform}</span>
-                <span className="activity-action">{activity.action}</span>
-                <span className="activity-time">{activity.time}</span>
+                <div className={`platform-tag ${activity.platform.toLowerCase()}`}>
+                  {activity.platform}
+                </div>
+                <div className="activity-details">
+                  <span className="activity-action">{activity.action}</span>
+                  <span className="activity-time">{activity.time}</span>
+                </div>
               </div>
             ))
           )}

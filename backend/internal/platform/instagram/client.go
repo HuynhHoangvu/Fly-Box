@@ -395,6 +395,9 @@ func ExtractMessages(payload *WebhookPayload) []platform.WebhookMessage {
 	var messages []platform.WebhookMessage
 
 	for _, entry := range payload.Entry {
+		// entry.ID is the Instagram Business Account ID for Instagram webhooks
+		igAccountID := strings.TrimSpace(entry.ID)
+
 		for _, m := range entry.Messaging {
 			if m.Message == nil {
 				continue
@@ -404,11 +407,17 @@ func ExtractMessages(payload *WebhookPayload) []platform.WebhookMessage {
 				continue
 			}
 
+			// Determine Page ID: prefer recipient.id for incoming messages, fallback to entry.ID
+			finalPageID := strings.TrimSpace(m.Recipient.ID)
+			if finalPageID == "" {
+				finalPageID = igAccountID
+			}
+
 			msg := platform.WebhookMessage{
 				Platform:         "instagram",
-				PagePlatformID:   m.Recipient.ID,
-				SenderPlatformID: m.Sender.ID,
-				MessageID:        m.Message.Mid,
+				PagePlatformID:   finalPageID,
+				SenderPlatformID: strings.TrimSpace(m.Sender.ID),
+				MessageID:        strings.TrimSpace(m.Message.Mid),
 				Timestamp:        m.Timestamp,
 			}
 

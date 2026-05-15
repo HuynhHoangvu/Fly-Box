@@ -11,6 +11,10 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ defau
 const FacebookConnectCallbackPage = lazy(() => import('./pages/auth/FacebookConnectCallbackPage').then(m => ({ default: m.FacebookConnectCallbackPage })));
 const InboxPage = lazy(() => import('./pages/InboxPage').then(m => ({ default: m.InboxPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const PostPage = lazy(() => import('./pages/post/PostPage').then(m => ({ default: m.PostPage })));
+const AutomationPage = lazy(() => import('./pages/automation/AutomationPage').then(m => ({ default: m.AutomationPage })));
+const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
+const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const NotificationCenter = lazy(() => import('./components/Notifications/NotificationCenter').then(m => ({ default: m.NotificationCenter })));
 
 
@@ -43,10 +47,10 @@ const AppContent: React.FC = () => {
             <Route path="inbox" element={<InboxPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="notifications" element={<NotificationCenter />} />
-            <Route path="post" element={<div className="workspace"><h1>Post</h1></div>} />
-            <Route path="automation" element={<div className="workspace"><h1>Automation</h1></div>} />
-            <Route path="customers" element={<div className="workspace"><h1>Customers</h1></div>} />
-            <Route path="settings" element={<div className="workspace"><h1>Settings</h1></div>} />
+            <Route path="post" element={<PostPage />} />
+            <Route path="automation" element={<AutomationPage />} />
+            <Route path="customers" element={<CustomersPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/hub/channels" replace />} />

@@ -1,0 +1,267 @@
+.post-page {
+  padding: 2rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.post-container {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.platform-selector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.platform-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.platform-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.platform-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.post-textarea {
+  width: 100%;
+  min-height: 150px;
+  border: none;
+  resize: none;
+  font-size: 1.125rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.post-textarea:focus {
+  outline: none;
+}
+
+.media-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.media-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.media-item img, .media-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-media {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.add-media-btn {
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  border: 2px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-media-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.add-media-btn span {
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.card-footer {
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+}
+
+.post-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* Preview Section */
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.device-toggle {
+  display: flex;
+  background: var(--bg-tertiary);
+  padding: 4px;
+  border-radius: var(--radius);
+}
+
+.device-toggle button {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.device-toggle button.active {
+  background: var(--bg-primary);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.preview-container {
+  display: flex;
+  justify-content: center;
+}
+
+.preview-container.mobile {
+  max-width: 375px;
+  margin: 0 auto;
+}
+
+.fb-post-mockup {
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  padding: 12px;
+}
+
+.post-user {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.post-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.post-content {
+  font-size: 15px;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+}
+
+.placeholder-text {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.post-media {
+  margin: 0 -12px 12px;
+}
+
+.post-media img, .post-media video {
+  width: 100%;
+  display: block;
+}
+
+.post-footer {
+  display: flex;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.footer-item {
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.footer-item:hover {
+  background: #f2f2f2;
+}

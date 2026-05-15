@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Plus, Settings, ExternalLink, RefreshCw, Trash2, Check, AlertCircle } from 'lucide-react';
+import { Plus, Settings, ExternalLink, RefreshCw, Trash2, Check, AlertCircle, MessageSquare } from 'lucide-react';
+import { BsShop } from 'react-icons/bs';
 import { pagesAPI } from '../../services/api';
 import { SocialPage } from '../../types';
 import './HubChannelPage.css';
@@ -237,31 +238,46 @@ export const HubChannelPage: React.FC = () => {
 
       <div className="hub-container">
         <div className="hub-header">
-          <h1>Kết nối kênh</h1>
-          <p>Kết nối các nền tảng mạng xã hội và sàn thương mại để quản lý tập trung tất cả tin nhắn, bình luận và đơn hàng.</p>
+          <div className="header-badge">Omnichannel Messaging Hub</div>
+          <h1>Kết nối đa kênh</h1>
+          <p>Tăng trưởng doanh thu bằng cách kết nối và quản lý tất cả khách hàng từ các nền tảng phổ biến nhất trên một giao diện duy nhất.</p>
         </div>
 
         {loading ? (
           <div className="hub-loading">
-            <RefreshCw size={32} className="spin" />
-            <span>Đang tải...</span>
+            <div className="loading-spinner">
+              <RefreshCw size={32} className="spin" />
+            </div>
+            <span>Đang đồng bộ dữ liệu...</span>
           </div>
         ) : (
-          <>
+          <div className="hub-content">
             <div className="channel-section">
-              <h2 className="section-title">Mạng xã hội & Nhắn tin</h2>
+              <div className="section-header">
+                <div className="section-title-wrap">
+                  <MessageSquare size={24} className="section-icon blue" />
+                  <h2>Mạng xã hội & Nhắn tin</h2>
+                </div>
+                <span className="section-count">{socialPlatforms.length} nền tảng</span>
+              </div>
               <div className="channel-grid">
                 {socialPlatforms.map(renderPlatformCard)}
               </div>
             </div>
             
             <div className="channel-section">
-              <h2 className="section-title">Sàn thương mại điện tử</h2>
+              <div className="section-header">
+                <div className="section-title-wrap">
+                  <BsShop size={24} className="section-icon orange" />
+                  <h2>Thương mại điện tử</h2>
+                </div>
+                <span className="section-count">{ecommercePlatforms.length} nền tảng</span>
+              </div>
               <div className="channel-grid">
                 {ecommercePlatforms.map(renderPlatformCard)}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

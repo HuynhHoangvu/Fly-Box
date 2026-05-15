@@ -409,6 +409,9 @@ func ExtractMessages(payload *WebhookPayload) []platform.WebhookMessage {
 	var messages []platform.WebhookMessage
 
 	for _, entry := range payload.Entry {
+		// entry.ID is the Page ID for Page webhooks
+		pageID := strings.TrimSpace(entry.ID)
+		
 		for _, m := range entry.Messaging {
 			if m.Message == nil {
 				continue
@@ -418,9 +421,15 @@ func ExtractMessages(payload *WebhookPayload) []platform.WebhookMessage {
 				continue
 			}
 
+			// Determine Page ID: prefer recipient.id for incoming messages, fallback to entry.ID
+			finalPageID := strings.TrimSpace(m.Recipient.ID)
+			if finalPageID == "" {
+				finalPageID = pageID
+			}
+
 			msg := platform.WebhookMessage{
 				Platform:         "facebook",
-				PagePlatformID:   strings.TrimSpace(m.Recipient.ID),
+				PagePlatformID:   finalPageID,
 				SenderPlatformID: strings.TrimSpace(m.Sender.ID),
 				MessageID:        strings.TrimSpace(m.Message.Mid),
 				Timestamp:        m.Timestamp,

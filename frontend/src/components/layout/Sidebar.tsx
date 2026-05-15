@@ -10,6 +10,8 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
 
   const navItems: Array<{ id: string; path: string; icon: IconKey; label: string }> = [
+    { id: 'hub', path: '/hub/channels', icon: 'hub', label: 'Kết nối' },
+    { id: 'dashboard', path: '/dashboard', icon: 'dashboard', label: 'Thống kê' },
     { id: 'inbox', path: '/inbox', icon: 'inbox', label: 'Hộp thư' },
     { id: 'post', path: '/post', icon: 'pencil', label: 'Đăng bài' },
     { id: 'automation', path: '/automation', icon: 'cog', label: 'Tự động hóa' },
