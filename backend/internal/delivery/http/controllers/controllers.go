@@ -922,7 +922,7 @@ func (ctl *Controller) ConnectPage(c *gin.Context) {
 			return
 		}
 
-		scope := "pages_show_list,pages_manage_metadata"
+		scope := "pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement"
 		authURL := fmt.Sprintf("https://www.facebook.com/v19.0/dialog/oauth?client_id=%s&redirect_uri=%s&scope=%s&state=%s",
 			url.QueryEscape(ctl.FacebookAppID),
 			url.QueryEscape(ctl.FacebookRedirectURI),
@@ -1148,47 +1148,18 @@ func (ctl *Controller) FacebookConnectCallback(c *gin.Context) {
 	}
 
 	// Return HTML page with code for frontend to process
-	c.Header("Content-Type", "text/html; charset=utf-8")
-	c.String(http.StatusOK, `<!DOCTYPE html>
-<html lang="vi">
-<head><meta charset="UTF-8"><title>Fly-Box - Kết nối Facebook</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
-  .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
-  .success { color: #28a745; }
-  h2 { margin-bottom: 20px; } p { color: #666; margin: 20px 0; }
-  .btn { display: inline-block; padding: 12px 24px; background: #1877f2; color: white; text-decoration: none; border-radius: 6px; font-weight: 500; margin-top: 10px; }
-  .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #1877f2; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-</head>
-<body>
-<div class="card">
-  <h2 class="success">✅ Kết nối Facebook thành công!</h2>
-  <p>Đang hoàn tất kết nối...</p>
-  <div class="spinner"></div>
-  <p style="font-size: 12px; color: #999;">Vui lòng đợi trong giây lát</p>
-</div>
-<script>
-  // Send code to parent window and close
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  const state = urlParams.get('state');
-  
-  // Store in sessionStorage for the app to pick up
-  sessionStorage.setItem('fb_oauth_code', code);
-  sessionStorage.setItem('fb_oauth_state', state);
-  
-  // Try to notify opener window
-  if (window.opener) {
-    window.opener.postMessage({ type: 'FB_OAUTH_SUCCESS', code, state }, '*');
-    window.close();
-  } else {
-    // Fallback: redirect to app
-    window.location.href = '/?fb_connected=true';
-  }
-</script>
-</body></html>`)
+	// Redirect to frontend callback page with code and state
+	frontendBaseURL := strings.TrimRight(ctl.FrontendURL, "/")
+	if frontendBaseURL == "" {
+		frontendBaseURL = "http://localhost:5173"
+	}
+	
+	redirectURL := fmt.Sprintf("%s/connect/callback?code=%s&state=%s", 
+		frontendBaseURL, 
+		url.QueryEscape(code), 
+		url.QueryEscape(state))
+	
+	c.Redirect(http.StatusFound, redirectURL)
 }
 
 func (ctl *Controller) ZaloConnectCallback(c *gin.Context) {
