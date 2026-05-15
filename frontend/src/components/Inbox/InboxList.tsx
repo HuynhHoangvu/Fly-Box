@@ -40,10 +40,11 @@ const ConversationItem = React.memo(({
   isActive: boolean; 
   onClick: (id: number) => void 
 }) => {
-  const platform = conv.page?.platform || 'facebook';
+  const platform = conv.page?.platform || (conv as any).platform || 'facebook';
   const platformIcon = PLATFORM_ICONS[platform] || PLATFORM_ICONS['facebook'];
-  const customerName = conv.customer?.name || 'Khách hàng';
-  const customerAvatar = conv.customer?.avatar || conv.customer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(customerName)}`;
+  // Handle both nested customer object and flat field format
+  const customerName = conv.customer?.name || (conv as any).customer_name || 'Khách hàng';
+  const customerAvatar = conv.customer?.avatar || conv.customer?.avatar_url || (conv as any).customer_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(customerName)}`;
 
   return (
     <button
@@ -88,20 +89,24 @@ export const InboxList: React.FC<InboxListProps> = ({
 }) => {
   const [activePlatform, setActivePlatform] = useState<string>('all');
 
-  const filteredConversations = useMemo(() => {
+const filteredConversations = useMemo(() => {
     let filtered = conversations;
     
-    // Filter by search query
+    // Filter by search query - handle both nested and flat formats
     if (searchQuery) {
-      filtered = filtered.filter(c => 
-        c.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      filtered = filtered.filter(c => {
+        const custName = c.customer?.name || (c as any).customer_name || '';
+        return custName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.last_message?.toLowerCase().includes(searchQuery.toLowerCase());
+      });
     }
     
-    // Filter by platform
+    // Filter by platform - handle both nested and flat formats
     if (activePlatform !== 'all') {
-      filtered = filtered.filter(c => c.page?.platform === activePlatform);
+      filtered = filtered.filter(c => {
+        const plat = c.page?.platform || (c as any).platform || '';
+        return plat === activePlatform;
+      });
     }
     
     return filtered;

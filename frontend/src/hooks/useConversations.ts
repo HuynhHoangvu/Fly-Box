@@ -64,11 +64,15 @@ export const useConversations = (userId?: number) => {
     });
   }, [loadConversations]);
 
-  // Filtered & Searched list
+// Filtered & Searched list
   const filteredConversations = useMemo(() => {
     return conversations.filter(c => {
-      const matchesSearch = c.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.last_message.toLowerCase().includes(searchQuery.toLowerCase());
+      // Handle both API response format (flat fields) and expected format (nested objects)
+      const customerName = c.customer?.name || (c as any).customer_name || '';
+      const lastMsg = c.last_message || '';
+      
+      const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          lastMsg.toLowerCase().includes(searchQuery.toLowerCase());
       
       if (!matchesSearch) return false;
       
