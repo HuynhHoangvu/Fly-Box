@@ -1806,56 +1806,68 @@ func (ctl *Controller) SendMessage(c *gin.Context) {
 	}
 
 	var msg *models.Message
+	var platformSent bool = false
 
 	// Try to send via platform API based on the page's platform
 	if conv.PageID != 0 {
-		page, _ := ctl.Repo.GetPageByID(conv.PageID)
-		if page != nil && page.AccessToken != "" {
+		page, pageErr := ctl.Repo.GetPageByID(conv.PageID)
+		if pageErr == nil && page != nil && page.AccessToken != "" && page.AccessToken != "mock_token" {
+			// Real page with real token - try to send via platform API
 			switch page.Platform {
 			case "facebook":
 				msg, err = ctl.Svc.SendFacebookMessage(convID, customer.PlatformID, req.Content)
 				if err != nil {
-					log.Printf("[send-message] FB API failed, saving locally: %v", err)
-					msg, _ = ctl.Svc.CreateAgentMessage(convID, req.Content)
+					log.Printf("[send-message] FB API failed: %v, saving locally", err)
+				} else {
+					platformSent = true
 				}
 			case "zalo":
 				msg, err = ctl.Svc.SendZaloMessage(convID, customer.PlatformID, req.Content)
 				if err != nil {
-					log.Printf("[send-message] Zalo API failed, saving locally: %v", err)
-					msg, _ = ctl.Svc.CreateAgentMessage(convID, req.Content)
+					log.Printf("[send-message] Zalo API failed: %v, saving locally", err)
+				} else {
+					platformSent = true
 				}
 			case "tiktok":
 				msg, err = ctl.Svc.SendTikTokMessage(convID, customer.PlatformID, req.Content)
 				if err != nil {
-					log.Printf("[send-message] TikTok API failed, saving locally: %v", err)
-					msg, _ = ctl.Svc.CreateAgentMessage(convID, req.Content)
+					log.Printf("[send-message] TikTok API failed: %v, saving locally", err)
+				} else {
+					platformSent = true
 				}
 			case "instagram":
 				msg, err = ctl.Svc.SendInstagramMessage(convID, customer.PlatformID, req.Content)
 				if err != nil {
-					log.Printf("[send-message] Instagram API failed, saving locally: %v", err)
-					msg, _ = ctl.Svc.CreateAgentMessage(convID, req.Content)
+					log.Printf("[send-message] Instagram API failed: %v, saving locally", err)
+				} else {
+					platformSent = true
 				}
 			case "shopee":
 				msg, err = ctl.Svc.SendShopeeMessage(convID, customer.PlatformID, req.Content)
 				if err != nil {
-					log.Printf("[send-message] Shopee API failed, saving locally: %v", err)
-					msg, _ = ctl.Svc.CreateAgentMessage(convID, req.Content)
+					log.Printf("[send-message] Shopee API failed: %v, saving locally", err)
+				} else {
+					platformSent = true
 				}
-			default:
-				msg, err = ctl.Svc.CreateAgentMessage(convID, req.Content)
 			}
-		} else {
-			msg, err = ctl.Svc.CreateAgentMessage(convID, req.Content)
 		}
-	} else {
-		msg, err = ctl.Svc.CreateAgentMessage(convID, req.Content)
 	}
 
-	if err != nil || msg == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create message"})
-		return
+	// If not sent via platform (demo mode or API failed), save locally
+	if !platformSent {
+		msg, err = ctl.Svc.CreateAgentMessage(convID, req.Content)
+		if err != nil {
+			log.Printf("[send-message] Failed to create local message: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create message"})
+			return
+		}
+		log.Printf("[send-message] Saved message locally (demo mode) for conv %d", convID)
 	}
+
+	// Update conversation
+	conv.LastMessage = req.Content
+	conv.UpdatedAt = time.Now()
+	_ = ctl.Repo.SaveConversation(conv)
 
 	// Broadcast to all connected clients
 	ctl.Hub.Broadcast(conv.PageID, ws.Event{
@@ -1864,7 +1876,11 @@ func (ctl *Controller) SendMessage(c *gin.Context) {
 		Data:   msg,
 	})
 
-	c.JSON(http.StatusCreated, gin.H{"data": msg})
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    msg,
+		"demo":    !platformSent,
+		"message": "Message saved successfully",
+	})
 }
 
 func (ctl *Controller) ListAutoReplies(c *gin.Context) {
