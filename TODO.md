@@ -1,21 +1,22 @@
 # 🎯 Fly-Box: Omni-Channel Messaging Platform (HaraSocial Clone)
 
-## 📊 Hiện Trạng Dự Án (Cập nhật: 2026-05-13)
+## 📊 Hiện Trạng Dự Án (Cập nhật: 2026-05-15)
 
 | Thành phần | Trạng thái |
 |---|---|
 | Backend Go (Gin + GORM + PostgreSQL) | ✅ Hoạt động |
-| Frontend React (TypeScript + Vite + Zustand) | ✅ Cơ bản |
+| Frontend React (TypeScript + Vite + Zustand) | ✅ Hoàn chỉnh |
 | Auth (JWT + Casbin RBAC + Google OAuth) | ✅ Hoàn chỉnh |
 | Facebook Messenger (OAuth + Webhook + Send/Receive) | ✅ Hoạt động + Hardened |
-| Zalo OA (OAuth + Webhook + Send/Receive) | ✅ Hoạt động (Phase 2 Done) |
-| TikTok Shop (OAuth + Webhook + Send/Receive) | ✅ Hoạt động (Phase 3 Done) |
-| WebSocket Hub (Real-time broadcast theo pageID) | ✅ Cơ bản |
+| Zalo OA (OAuth + Webhook + Send/Receive) | ✅ Hoạt động |
+| TikTok Shop (OAuth + Webhook + Send/Receive) | ✅ Hoạt động |
+| Instagram (OAuth + Webhook + Send/Receive) | ✅ Hoạt động |
+| Shopee (OAuth + Webhook + Send/Receive) | ✅ Hoạt động |
+| WebSocket Hub (Real-time broadcast theo pageID + userID) | ✅ Hoàn chỉnh |
 | Auto-Reply (Exact match, contains, default) | ✅ Hoạt động |
 | Platform Interface (MessagingClient) | ✅ Hoàn chỉnh |
-| Instagram / Shopee | ❌ Chỉ có stub |
-| Notification System | ❌ Chưa có |
-| Dashboard thống kê | ❌ Placeholder |
+| Notification System (Backend + Frontend) | ✅ Hoạt động |
+| Dashboard thống kê | ⏳ Placeholder |
 
 ---
 
@@ -395,7 +396,27 @@ Cấu trúc platform hiện tại:
 
 ---
 
-## Phase 4: Instagram Integration (Tuần 5-6, song song TikTok) ⏳ PENDING
+## Phase 4: Instagram Integration (Tuần 5-6, song song TikTok) ✅ DONE (2026-05-15)
+
+### Kết quả Phase 4:
+```
+Đã hoàn thành:
+  ✅ Tạo Instagram client tại backend/internal/platform/instagram/client.go
+  ✅ Tạo Instagram types tại backend/internal/platform/instagram/types.go
+  ✅ Implement MessagingClient interface (SendTextMessage, GetUserProfile, VerifyWebhookSignature)
+  ✅ Instagram Graph API integration (shares Meta App với Facebook)
+  ✅ OAuth flow: Instagram account selection + Page linking
+  ✅ Webhook handler: signature verify → parse → save → WebSocket broadcast → auto-reply
+  ✅ Webhook events: messages, messaging_postbacks, message_reactions
+  ✅ Customer name enrichment từ Instagram profile
+  ✅ ConnectPage → Instagram OAuth URL generation
+  ✅ CompletePageConnection → Instagram code exchange
+  ✅ SendMessage → Instagram branch
+  ✅ InstagramConnectCallback handler
+  ✅ Config: dùng chung FACEBOOK_APP_ID, FACEBOOK_APP_SECRET
+  ✅ go build ./... PASSED
+  ✅ go vet ./... PASSED
+```
 
 ### 4.1 Chia sẻ Meta Graph API với Facebook
 
@@ -421,7 +442,26 @@ Cấu trúc platform hiện tại:
 
 ---
 
-## Phase 5: Shopee Integration (Tuần 7-8) ⏳ PENDING
+## Phase 5: Shopee Integration (Tuần 7-8) ✅ DONE (2026-05-15)
+
+### Kết quả Phase 5:
+```
+Đã hoàn thành:
+  ✅ Tạo Shopee client tại backend/internal/platform/shopee/client.go
+  ✅ Tạo Shopee types tại backend/internal/platform/shopee/types.go
+  ✅ Implement MessagingClient interface (SendTextMessage, VerifyWebhookSignature)
+  ✅ Shopee Open Platform API signature generation (HMAC-SHA256)
+  ✅ OAuth flow: ShopeeShopAuthURL, ExchangeCodeForToken
+  ✅ Full ShopeeWebhook handler: signature verify → parse → save → WebSocket broadcast → auto-reply
+  ✅ Webhook message types: TEXT, IMAGE, VIDEO, AUDIO, FILE, STICKER, PRODUCT, ORDER
+  ✅ ConnectPage → Shopee OAuth URL generation
+  ✅ CompletePageConnection → Shopee code exchange + SaveShopeeShop
+  ✅ SendMessage → Shopee branch
+  ✅ ShopeeConnectCallback handler
+  ✅ Config: SHOPEE_PARTNER_ID, SHOPEE_PARTNER_KEY, SHOPEE_REDIRECT_URI
+  ✅ go build ./... PASSED
+  ✅ go vet ./... PASSED
+```
 
 ### 5.1 Đăng ký Partner
 
@@ -476,7 +516,24 @@ SHOPEE_HOST=https://partner.shopeemobile.com
 
 ---
 
-## Phase 6: Notification System (Tuần 9-10) ⏳ PENDING
+## Phase 6: Notification System (Tuần 9-10) ✅ DONE (2026-05-15)
+
+### Kết quả Phase 6:
+```
+Đã hoàn thành:
+  ✅ Tạo Notification model tại backend/internal/models/notification.go
+  ✅ Tạo NotificationService tại backend/internal/services/notification_service.go
+  ✅ Tạo NotificationRepository methods tại backend/internal/repository/repository.go
+  ✅ Tạo NotificationController tại backend/internal/delivery/http/controllers/controllers.go
+  ✅ Enhanced WebSocket Hub với user-level connections
+  ✅ API endpoints: GET/POST /api/v1/notifications/*
+  ✅ Event bus: EmitNotification, EmitNewMessageNotification, EmitNewOrderNotification
+  ✅ Badge update real-time qua WebSocket
+  ✅ Integration với tất cả platform webhooks (Facebook, Zalo, TikTok, Instagram, Shopee)
+  ✅ PageUser model để map pages với users
+  ✅ go build ./... PASSED
+  ✅ go vet ./... PASSED
+```
 
 ### 6.1 Database Schema
 
@@ -536,7 +593,23 @@ POST /api/v1/conversations/:id/mark-read ← Đánh dấu conversation đã đ�
 
 ---
 
-## Phase 7: Frontend - Unified Notification Dashboard (Tuần 10-12) ⏳ PENDING
+## Phase 7: Frontend - Unified Notification Dashboard (Tuần 10-12) ✅ DONE (2026-05-15)
+
+### Kết quả Phase 7:
+```
+Đã hoàn thành:
+  ✅ Tạo NotificationBell component với badge + dropdown
+  ✅ Tạo NotificationCenter page với filters
+  ✅ Tạo useNotifications hook
+  ✅ Tạo useWebSocket hook
+  ✅ Tạo WebSocketContext provider
+  ✅ Thêm NotificationBell vào Sidebar
+  ✅ Real-time notification update qua WebSocket
+  ✅ Platform-specific styling (Facebook, Zalo, TikTok, Instagram, Shopee)
+  ✅ Responsive design cho mobile
+  ✅ Animation cho new notifications
+  ✅ npm run build PASSED
+```
 
 ### 7.1 Component Refactoring
 

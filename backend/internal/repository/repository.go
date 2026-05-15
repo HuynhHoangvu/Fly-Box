@@ -312,3 +312,49 @@ func (r *Repository) GetNotificationByID(id uint) (*models.Notification, error) 
 func (r *Repository) DeleteNotification(id, userID uint) error {
 	return r.DB.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Notification{}).Error
 }
+
+// PageUser methods
+
+// GetPageUsers returns all users associated with a page.
+func (r *Repository) GetPageUsers(pageID uint) ([]models.PageUser, error) {
+	var pageUsers []models.PageUser
+	if err := r.DB.Where("page_id = ?", pageID).Find(&pageUsers).Error; err != nil {
+		return nil, err
+	}
+	return pageUsers, nil
+}
+
+// GetUserIDsForPage returns all user IDs associated with a page.
+func (r *Repository) GetUserIDsForPage(pageID uint) ([]uint, error) {
+	var userIDs []uint
+	if err := r.DB.Model(&models.PageUser{}).Where("page_id = ?", pageID).Pluck("user_id", &userIDs).Error; err != nil {
+		return nil, err
+	}
+	return userIDs, nil
+}
+
+// AddPageUser adds a user to a page.
+func (r *Repository) AddPageUser(pageID, userID uint, role string) error {
+	pageUser := models.PageUser{
+		PageID: pageID,
+		UserID: userID,
+		Role:    role,
+	}
+	return r.DB.Create(&pageUser).Error
+}
+
+// RemovePageUser removes a user from a page.
+func (r *Repository) RemovePageUser(pageID, userID uint) error {
+	return r.DB.Where("page_id = ? AND user_id = ?", pageID, userID).Delete(&models.PageUser{}).Error
+}
+
+// GetPagesForUser returns all pages a user has access to.
+func (r *Repository) GetPagesForUser(userID uint) ([]models.SocialPage, error) {
+	var pages []models.SocialPage
+	if err := r.DB.Joins("JOIN page_users ON page_users.page_id = social_pages.id").
+		Where("page_users.user_id = ?", userID).
+		Find(&pages).Error; err != nil {
+		return nil, err
+	}
+	return pages, nil
+}

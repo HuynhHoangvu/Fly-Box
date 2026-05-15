@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081';
 
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // Thêm dòng này để hỗ trợ CORS tốt hơn
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -26,9 +26,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // We can't use hooks here, but clearing localStorage is enough 
-      // for the next App mount/checkAuth to detect the logout.
-      // Optionally redirect to login
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
@@ -64,7 +61,7 @@ export const pagesAPI = {
     platform: string;
     code: string;
     state: string;
-    page_id: string;
+    page_id?: string;
     page_name?: string;
     permission_level?: string;
     connected_shop_name?: string;
@@ -74,28 +71,32 @@ export const pagesAPI = {
 
 // Conversations endpoints
 export const conversationsAPI = {
-  list: (pageId?: string) => 
-    api.get('/api/v1/conversations', { params: { page_id: pageId } }),
+  list: (params?: { page_id?: string; status?: string }) => 
+    api.get('/api/v1/conversations', { params }),
   
-  getMessages: (conversationId: string) => 
-    api.get(`/api/v1/conversations/${conversationId}/messages`),
+  getMessages: (conversationId: string | number, params?: { before?: string; limit?: number }) => 
+    api.get(`/api/v1/conversations/${conversationId}/messages`, { params }),
   
-sendMessage: (conversationId: string, content: string, clientId: string) => 
-    api.post(`/api/v1/conversations/${conversationId}/messages`, { 
-      content
-    }),
+  sendMessage: (conversationId: string | number, content: string) => 
+    api.post(`/api/v1/conversations/${conversationId}/messages`, { content }),
+
+  markRead: (conversationId: string | number) =>
+    api.post(`/api/v1/conversations/${conversationId}/mark-read`),
 };
 
 // Auto replies endpoints
 export const autoRepliesAPI = {
-  list: () => 
-    api.get('/api/v1/auto-replies'),
+  list: (params?: { page_id?: string }) => 
+    api.get('/api/v1/auto-replies', { params }),
   
-  create: (data: { keyword: string; reply: string; platform: string }) => 
+  create: (data: { page_id: number; keyword: string; reply_content: string; is_active?: boolean }) => 
     api.post('/api/v1/auto-replies', data),
   
-  update: (id: string, data: { keyword: string; reply: string; platform: string }) => 
+  update: (id: string | number, data: { keyword?: string; reply_content?: string; is_active?: boolean }) => 
     api.put(`/api/v1/auto-replies/${id}`, data),
+
+  delete: (id: string | number) =>
+    api.delete(`/api/v1/auto-replies/${id}`),
 };
 
 // Notifications endpoints
@@ -108,6 +109,9 @@ export const notificationsAPI = {
 
   markRead: (notificationIds: number[]) =>
     api.post('/api/v1/notifications/mark-read', { notification_ids: notificationIds }),
+
+  markOneRead: (id: number) =>
+    api.put(`/api/v1/notifications/${id}/mark-read`),
 
   markAllRead: () =>
     api.post('/api/v1/notifications/mark-all-read'),

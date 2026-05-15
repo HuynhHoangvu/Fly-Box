@@ -18,8 +18,9 @@ import (
 	igplatform "fly-box/backend/internal/platform/instagram"
 	shopeeplatform "fly-box/backend/internal/platform/shopee"
 	tiktokplatform "fly-box/backend/internal/platform/tiktok"
- zaloplatform "fly-box/backend/internal/platform/zalo"
+	zaloplatform "fly-box/backend/internal/platform/zalo"
 	"fly-box/backend/internal/repository"
+	"fly-box/backend/internal/services"
 	"fly-box/backend/internal/usecase"
 
 	"github.com/gin-gonic/gin"
@@ -31,6 +32,7 @@ import (
 type Controller struct {
 	Repo                  *repository.Repository
 	Svc                   *usecase.Service
+	NotifSvc              *services.NotificationService
 	JWT                   *middlewares.JWTManager
 	Hub                   *ws.Hub
 	DB                    *gorm.DB
@@ -155,6 +157,9 @@ func (ctl *Controller) InstagramWebhook(c *gin.Context) {
 			PageID: page.ID,
 			Data:   msg,
 		})
+
+		// Emit notification to page users
+		go ctl.emitNewMessageNotification(page.ID, conv.ID, "instagram", customer.Name, content)
 
 		// Auto-reply check (async)
 		go func(pageID uint, convID uint, customerPID string, pageAccessToken string, incomingText string) {
@@ -310,6 +315,9 @@ func (ctl *Controller) TikTokWebhook(c *gin.Context) {
 			Data:   msg,
 		})
 
+		// Emit notification to page users
+		go ctl.emitNewMessageNotification(page.ID, conv.ID, "tiktok", customer.Name, content)
+
 		// Auto-reply check (async)
 		go func(pageID uint, convID uint, customerPID string, pageAccessToken string, incomingText string) {
 			rule, err := ctl.Svc.MatchAutoReply(pageID, incomingText)
@@ -349,9 +357,11 @@ func (ctl *Controller) TikTokWebhook(c *gin.Context) {
 }
 
 func New(repo *repository.Repository, svc *usecase.Service, jwt *middlewares.JWTManager, hub *ws.Hub, db *gorm.DB, fbToken, ttToken, igToken, fbAppID, fbAppSecret, fbRedirectURI, frontendURL, zaloAppID, zaloAppSecret, zaloOASecretKey, zaloRedirectURI, tiktokAppKey, tiktokAppSecret, tiktokRedirectURI, shopeePartnerID, shopeePartnerKey, shopeeRedirectURI, shopeeVerifyToken string) *Controller {
+	notifSvc := services.NewNotificationService(repo, hub)
 	return &Controller{
 		Repo:                  repo,
 		Svc:                   svc,
+		NotifSvc:              notifSvc,
 		JWT:                   jwt,
 		Hub:                   hub,
 		DB:                    db,
@@ -373,6 +383,25 @@ func New(repo *repository.Repository, svc *usecase.Service, jwt *middlewares.JWT
 		ShopeePartnerKey:      shopeePartnerKey,
 		ShopeeRedirectURI:     shopeeRedirectURI,
 		ShopeeVerifyToken:     shopeeVerifyToken,
+	}
+}
+
+// emitNewMessageNotification sends notification to all users who have access to the page
+func (ctl *Controller) emitNewMessageNotification(pageID, convID uint, platform, customerName, messagePreview string) {
+	if ctl.NotifSvc == nil {
+		return
+	}
+	
+	// Get all users who have access to this page
+	userIDs, err := ctl.Repo.GetUserIDsForPage(pageID)
+	if err != nil {
+		log.Printf("[notification] failed to get users for page %d: %v", pageID, err)
+		return
+	}
+	
+	// Emit notification to each user
+	for _, userID := range userIDs {
+		ctl.NotifSvc.EmitNewMessageNotification(userID, pageID, convID, platform, customerName, messagePreview)
 	}
 }
 
@@ -659,6 +688,9 @@ func (ctl *Controller) FacebookWebhook(c *gin.Context) {
 			Data:   msg,
 		})
 
+		// Emit notification to page users
+		go ctl.emitNewMessageNotification(page.ID, conv.ID, "facebook", customer.Name, content)
+
 		// Auto-reply check (async to not block webhook response)
 		go func(pageID uint, convID uint, customerPID string, pageAccessToken string, incomingText string) {
 			rule, err := ctl.Svc.MatchAutoReply(pageID, incomingText)
@@ -814,6 +846,9 @@ func (ctl *Controller) ZaloWebhook(c *gin.Context) {
 			PageID: page.ID,
 			Data:   msg,
 		})
+
+		// Emit notification to page users
+		go ctl.emitNewMessageNotification(page.ID, conv.ID, "zalo", customer.Name, content)
 
 		// Auto-reply check (async)
 		go func(pageID uint, convID uint, customerPID string, pageAccessToken string, incomingText string) {
@@ -1332,6 +1367,9 @@ func (ctl *Controller) ShopeeWebhook(c *gin.Context) {
 			PageID: page.ID,
 			Data:   msg,
 		})
+
+		// Emit notification to page users
+		go ctl.emitNewMessageNotification(page.ID, conv.ID, "shopee", customer.Name, content)
 
 		// Auto-reply check (async)
 		go func(pageID uint, convID uint, customerPID string, pageAccessToken string, incomingText string) {

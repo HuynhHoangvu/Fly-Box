@@ -1,9 +1,13 @@
+import { useState, useEffect } from 'react';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useWebSocket } from '../../hooks/useWebSocket';
+import { useAuthStore } from '../../store/useAuthStore';
 import './NotificationCenter.css';
 
 export function NotificationCenter() {
-  const userId = Number(localStorage.getItem('user_id')) || 0;
+  const user = useAuthStore(s => s.user);
+  const userId = user ? Number(user.id) : 0;
+  const [newNotification, setNewNotification] = useState(false);
   
   const {
     notifications,
@@ -22,13 +26,28 @@ export function NotificationCenter() {
   // WebSocket for real-time updates
   useWebSocket({
     userId,
-    onNewNotification: () => {
+    onNewNotification: (notif: any) => {
+      setNewNotification(true);
       refresh();
+      // Play notification sound (optional)
+      try {
+        const audio = new Audio('/notification.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+      } catch {}
     },
     onBadgeUpdate: () => {
       refresh();
     },
   });
+
+  // Clear new notification indicator after 3 seconds
+  useEffect(() => {
+    if (newNotification) {
+      const timer = setTimeout(() => setNewNotification(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [newNotification]);
 
   const getPlatformIcon = (platform: string) => {
     const icons: Record<string, string> = {
@@ -145,7 +164,9 @@ export function NotificationCenter() {
             {notifications.map((notif) => (
               <div
                 key={notif.id}
-                className={`notification-card ${!notif.is_read ? 'unread' : ''}`}
+                className={`notification-card ${!notif.is_read ? 'unread' : ''} ${newNotification ? 'new' : ''}`}
+                data-platform={notif.platform}
+                data-type={notif.type}
                 onClick={() => handleNotificationClick(notif)}
               >
                 <div className="card-icon">{getPlatformIcon(notif.platform)}</div>

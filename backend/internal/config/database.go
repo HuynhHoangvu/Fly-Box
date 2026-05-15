@@ -22,6 +22,7 @@ func InitDB(cfg Config) *gorm.DB {
 		&models.Message{},
 		&models.AutoReplyRule{},
 		&models.Notification{},
+		&models.PageUser{},
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}

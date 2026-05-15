@@ -16,6 +16,7 @@ type User struct {
 
 type SocialPage struct {
 	ID                    uint      `gorm:"primaryKey" json:"id"`
+	UserID                *uint     `gorm:"index" json:"user_id,omitempty"` // Owner of this page (nullable for shared pages)
 	Platform              string    `gorm:"not null;index" json:"platform"`
 	ExternalPageID        string    `gorm:"column:page_id;not null;uniqueIndex" json:"page_id"`
 	PageName              string    `gorm:"not null" json:"page_name"`
@@ -72,4 +73,13 @@ type AutoReplyRule struct {
 	IsActive     bool           `gorm:"not null;default:true" json:"is_active"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
+}
+
+// PageUser maps pages to users for notification routing
+type PageUser struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	PageID    uint      `gorm:"not null;uniqueIndex:idx_page_user" json:"page_id"`
+	UserID    uint      `gorm:"not null;uniqueIndex:idx_page_user" json:"user_id"`
+	Role      string    `gorm:"not null;default:admin" json:"role"` // admin, editor, viewer
+	CreatedAt time.Time `json:"created_at"`
 }

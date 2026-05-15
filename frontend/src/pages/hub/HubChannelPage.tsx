@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Settings, ExternalLink, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Plus, Settings, ExternalLink, RefreshCw, Trash2, Check, AlertCircle } from 'lucide-react';
 import { pagesAPI } from '../../services/api';
-import { SocialPage } from '../../types/dashboard';
+import { SocialPage } from '../../types';
 import './HubChannelPage.css';
 
 const PLATFORMS = [
@@ -9,40 +9,40 @@ const PLATFORMS = [
     id: 'facebook',
     name: 'Facebook',
     desc: 'Kết nối Fanpage để quản lý tin nhắn và bình luận',
-    link: '#',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg',
+    color: '#1877F2',
     category: 'social'
   },
   {
     id: 'instagram',
     name: 'Instagram',
-    desc: 'Quản lý Direct Message từ Instagram',
-    link: '#',
+    desc: 'Quản lý Direct Message từ Instagram Business',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg',
+    color: '#E4405F',
     category: 'social'
   },
   {
     id: 'zalo',
     name: 'Zalo OA',
     desc: 'Chăm sóc khách hàng qua Zalo Official Account',
-    link: '#',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg',
+    color: '#0068FF',
     category: 'social'
   },
   {
     id: 'shopee',
     name: 'Shopee',
     desc: 'Đồng bộ đơn hàng và tin nhắn từ Shopee',
-    link: '#',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/fe/Shopee_logo.svg',
+    color: '#EE4D2D',
     category: 'ecommerce'
   },
   {
     id: 'tiktok',
     name: 'TikTok Shop',
     desc: 'Đồng bộ đơn hàng và tin nhắn từ TikTok Shop',
-    link: '#',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg',
+    color: '#000000',
     category: 'ecommerce'
   }
 ];
@@ -51,9 +51,14 @@ export const HubChannelPage: React.FC = () => {
   const [pages, setPages] = useState<SocialPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const fetchConnectedPages = async () => {
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const fetchConnectedPages = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await pagesAPI.list();
@@ -63,45 +68,43 @@ export const HubChannelPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchConnectedPages();
 
-    // Listen for OAuth callback from popup
-    const handleOAuthCallback = async (event: MessageEvent) => {
-      if (event.data?.type === 'FB_OAUTH_SUCCESS') {
-        const { code, state } = event.data;
-        await completeFacebookConnect(code, state);
-      }
-    };
+    // Check for OAuth callback params
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const status = urlParams.get('status');
+    const errorMsg = urlParams.get('message');
 
-    // Check for stored OAuth data
-    const storedCode = sessionStorage.getItem('fb_oauth_code');
-    const storedState = sessionStorage.getItem('fb_oauth_state');
-    if (storedCode && storedState) {
-      sessionStorage.removeItem('fb_oauth_code');
-      sessionStorage.removeItem('fb_oauth_state');
-      completeFacebookConnect(storedCode, storedState);
+    if (code && state) {
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Complete connection
+      const platform = state.split('-')[0];
+      completeConnection(platform, code, state);
+    } else if (status === 'error' && errorMsg) {
+      showToast('error', decodeURIComponent(errorMsg));
+      window.history.replaceState({}, '', window.location.pathname);
     }
+  }, [fetchConnectedPages]);
 
-    window.addEventListener('message', handleOAuthCallback);
-    return () => window.removeEventListener('message', handleOAuthCallback);
-  }, []);
-
-  const completeFacebookConnect = async (code: string, state: string) => {
-    setConnecting('facebook');
+  const completeConnection = async (platform: string, code: string, state: string) => {
+    setConnecting(platform);
     try {
       await pagesAPI.completeConnect({
-        platform: 'facebook',
+        platform,
         code,
         state,
-        page_id: '',
       });
-      setNotification({ type: 'success', message: 'Kết nối Facebook thành công!' });
+      showToast('success', `Kết nối ${platform.charAt(0).toUpperCase() + platform.slice(1)} thành công!`);
       fetchConnectedPages();
     } catch (error: any) {
-      setNotification({ type: 'error', message: error?.response?.data?.error || 'Kết nối Facebook thất bại' });
+      showToast('error', error?.response?.data?.error || `Kết nối ${platform} thất bại`);
     } finally {
       setConnecting(null);
     }
@@ -116,37 +119,26 @@ export const HubChannelPage: React.FC = () => {
       setConnecting(platformId);
       const { data } = await pagesAPI.connect(platformId);
       
-      if (data.data && data.data.auth_url) {
-        // Open OAuth in popup window
-        const width = 600;
-        const height = 700;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        
-        const popup = window.open(
-          data.data.auth_url,
-          'oauth_popup',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
-        );
-
-        // Listen for the callback in the popup
-        const checkPopup = setInterval(() => {
-          if (!popup || popup.closed) {
-            clearInterval(checkPopup);
-            setConnecting(null);
-          }
-        }, 1000);
-      } else if (data.data && data.data.manual) {
-        alert(data.data.message || 'Tính năng này đang được phát triển hoặc cần cấu hình thêm!');
+      if (data.data?.auth_url) {
+        // Redirect to OAuth
+        window.location.href = data.data.auth_url;
+      } else if (data.data?.manual) {
+        showToast('error', data.data.message || 'Tính năng đang phát triển');
         setConnecting(null);
       } else {
-        alert('Không thể lấy được đường dẫn kết nối!');
+        showToast('error', 'Không thể lấy đường dẫn kết nối');
         setConnecting(null);
       }
-    } catch (error) {
-      console.error('Lỗi khi kết nối kênh:', error);
+    } catch (error: any) {
+      showToast('error', error?.response?.data?.error || 'Lỗi kết nối');
       setConnecting(null);
     }
+  };
+
+  const handleDisconnect = async (pageId: number) => {
+    if (!confirm('Bạn có chắc muốn ngắt kết nối kênh này?')) return;
+    // Note: Backend needs disconnect endpoint
+    showToast('error', 'Tính năng ngắt kết nối đang phát triển');
   };
 
   const socialPlatforms = PLATFORMS.filter(p => p.category === 'social');
@@ -158,45 +150,62 @@ export const HubChannelPage: React.FC = () => {
     const isConnecting = connecting === platform.id;
 
     return (
-      <div key={platform.id} className="channel-card" data-platform={platform.id}>
-        <div className="channel-info">
+      <div 
+        key={platform.id} 
+        className={`channel-card ${isConnected ? 'connected' : ''}`}
+        style={{ '--platform-color': platform.color } as React.CSSProperties}
+      >
+        <div className="channel-header">
           <div className="channel-icon-wrap">
             <img src={platform.iconUrl} alt={platform.name} className="channel-icon" />
           </div>
-          <div className="channel-text">
+          <div className="channel-info">
             <h3>{platform.name}</h3>
-            <a href={platform.link} target="_blank" rel="noreferrer" className="help-link">
-              {platform.desc} <ExternalLink size={14} />
-            </a>
+            <p>{platform.desc}</p>
           </div>
+        </div>
+
+        <div className="channel-body">
+          {isConnected ? (
+            <div className="connected-pages">
+              {connections.map(conn => (
+                <div key={conn.id} className="connected-page-item">
+                  <div className="page-info">
+                    <span className="page-name">{conn.page_name}</span>
+                    <span className={`page-status ${conn.status}`}>
+                      {conn.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+                    </span>
+                  </div>
+                  {conn.warning_message && (
+                    <div className="page-warning">
+                      <AlertCircle size={14} />
+                      <span>{conn.warning_message}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="channel-actions">
           {isConnected ? (
-            <div className="connected-status">
+            <div className="connected-actions">
               <span className="status-badge">
-                <span className="status-dot"></span>
-                Đã kết nối {connections.length}
+                <Check size={14} />
+                {connections.length} đã kết nối
               </span>
-              <div className="connected-actions">
-                <button 
-                  className="btn-settings"
-                  title="Cài đặt kênh"
-                >
-                  <Settings size={18} />
-                </button>
-                <button 
-                  className="btn-add-more"
-                  onClick={() => handleConnect(platform.id)}
-                  disabled={isConnecting}
-                >
-                  <Plus size={16} /> Thêm
-                </button>
-              </div>
+              <button 
+                className="btn-add-more"
+                onClick={() => handleConnect(platform.id)}
+                disabled={isConnecting}
+              >
+                <Plus size={16} /> Thêm
+              </button>
             </div>
           ) : (
             <button 
-              className={`btn-connect ${['facebook', 'zalo'].includes(platform.id) ? 'primary-action' : ''}`}
+              className="btn-connect"
               onClick={() => handleConnect(platform.id)}
               disabled={isConnecting}
             >
@@ -206,7 +215,7 @@ export const HubChannelPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Plus size={18} /> Kết nối {platform.name}
+                  <Plus size={18} /> Kết nối
                 </>
               )}
             </button>
@@ -217,40 +226,38 @@ export const HubChannelPage: React.FC = () => {
   };
 
   return (
-    <div className="hub-page-wrapper">
-      {notification && (
-        <div className={`notification ${notification.type}`}>
-          {notification.message}
-          <button onClick={() => setNotification(null)}>×</button>
+    <div className="hub-page">
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)}>×</button>
         </div>
       )}
+
       <div className="hub-container">
         <div className="hub-header">
-          <div className="hub-logo">
-            <div className="logo-icon">FB</div>
-            <span>Flybox Hub</span>
-          </div>
-          <h1>Kết nối đa kênh</h1>
-          <p>Quản lý tập trung tin nhắn, bình luận và đơn hàng từ nhiều nền tảng khác nhau trên một giao diện duy nhất.</p>
+          <h1>Kết nối kênh</h1>
+          <p>Kết nối các nền tảng mạng xã hội và sàn thương mại để quản lý tập trung tất cả tin nhắn, bình luận và đơn hàng.</p>
         </div>
 
         {loading ? (
           <div className="hub-loading">
-            <div className="spinner"></div>
-            <span>Đang tải cấu hình kênh...</span>
+            <RefreshCw size={32} className="spin" />
+            <span>Đang tải...</span>
           </div>
         ) : (
           <>
             <div className="channel-section">
               <h2 className="section-title">Mạng xã hội & Nhắn tin</h2>
-              <div className="channel-list">
+              <div className="channel-grid">
                 {socialPlatforms.map(renderPlatformCard)}
               </div>
             </div>
             
             <div className="channel-section">
               <h2 className="section-title">Sàn thương mại điện tử</h2>
-              <div className="channel-list">
+              <div className="channel-grid">
                 {ecommercePlatforms.map(renderPlatformCard)}
               </div>
             </div>

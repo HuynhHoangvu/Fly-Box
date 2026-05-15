@@ -196,3 +196,108 @@
 .load-more-btn:hover {
   background-color: #e5e7eb;
 }
+
+/* New notification animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-card.new {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Platform-specific colors */
+.notification-card[data-platform="facebook"] .platform-badge {
+  background-color: #e7f3ff;
+  color: #1877f2;
+}
+
+.notification-card[data-platform="zalo"] .platform-badge {
+  background-color: #e7f0ff;
+  color: #0068ff;
+}
+
+.notification-card[data-platform="tiktok"] .platform-badge {
+  background-color: #f0f0f0;
+  color: #000000;
+}
+
+.notification-card[data-platform="instagram"] .platform-badge {
+  background-color: #fce7f3;
+  color: #e4405f;
+}
+
+.notification-card[data-platform="shopee"] .platform-badge {
+  background-color: #fff1f0;
+  color: #ee4d2d;
+}
+
+/* Type-specific colors */
+.notification-card[data-type="new_message"] .type-badge {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.notification-card[data-type="new_order"] .type-badge {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.notification-card[data-type="new_comment"] .type-badge {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.notification-card[data-type="new_follower"] .type-badge {
+  background-color: #f3e8ff;
+  color: #9333ea;
+}
+
+.notification-card[data-type="system"] .type-badge {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .notification-center {
+    padding: 16px;
+  }
+
+  .center-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .filters {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notification-card {
+    padding: 12px;
+  }
+
+  .card-icon {
+    font-size: 24px;
+    margin-right: 12px;
+  }
+
+  .card-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .time {
+    margin-left: 0;
+  }
+}
