@@ -922,8 +922,9 @@ func (ctl *Controller) ConnectPage(c *gin.Context) {
 			return
 		}
 
-		scope := "pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement"
-		authURL := fmt.Sprintf("https://www.facebook.com/v19.0/dialog/oauth?client_id=%s&redirect_uri=%s&scope=%s&state=%s",
+		// Request all necessary permissions for Facebook Pages
+		scope := "pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement,pages_manage_posts,pages_read_user_content"
+		authURL := fmt.Sprintf("https://www.facebook.com/v19.0/dialog/oauth?client_id=%s&redirect_uri=%s&scope=%s&state=%s&response_type=code",
 			url.QueryEscape(ctl.FacebookAppID),
 			url.QueryEscape(ctl.FacebookRedirectURI),
 			url.QueryEscape(scope),
@@ -1462,24 +1463,32 @@ func (ctl *Controller) CompletePageConnection(c *gin.Context) {
 
 		result, err := ctl.Svc.ExchangeFacebookCode(req.Code)
 		if err != nil {
+			log.Printf("[facebook-connect] ExchangeFacebookCode failed: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("facebook oauth failed: %v", err)})
 			return
 		}
 
+		log.Printf("[facebook-connect] Found %d pages", len(result.Pages))
+
 		for _, page := range result.Pages {
+			log.Printf("[facebook-connect] Processing page: ID=%s, Name=%s", page.ID, page.Name)
 			savedPage, err := ctl.Svc.SaveFacebookPage(page, result.UserAccessToken)
 			if err != nil {
+				log.Printf("[facebook-connect] Failed to save page %s: %v", page.ID, err)
 				continue
 			}
 
 			// Subscribe to webhook for this page
-			_ = ctl.Svc.SubscribePageToWebhook(savedPage)
+			if err := ctl.Svc.SubscribePageToWebhook(savedPage); err != nil {
+				log.Printf("[facebook-connect] Failed to subscribe webhook for page %s: %v", page.ID, err)
+			}
 
 			savedPages = append(savedPages, *savedPage)
 		}
 
 		if len(savedPages) == 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "no pages found or failed to save pages"})
+			log.Printf("[facebook-connect] No pages saved. Total pages found: %d", len(result.Pages))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("no pages found or failed to save pages. Found %d pages from Facebook.", len(result.Pages))})
 			return
 		}
 

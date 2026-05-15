@@ -118,16 +118,31 @@ func (h *Hub) Broadcast(pageID uint, evt Event) {
 	defer h.mu.RUnlock()
 
 	payload, _ := json.Marshal(evt)
+	log.Printf("[ws] Broadcasting event type=%s pageID=%d to %d page connections", evt.Type, pageID, len(h.connections[pageID]))
 	
 	// Broadcast to specific page connections
 	for conn := range h.connections[pageID] {
-		_ = conn.WriteMessage(gws.TextMessage, payload)
+		if err := conn.WriteMessage(gws.TextMessage, payload); err != nil {
+			log.Printf("[ws] Failed to send to page connection: %v", err)
+		}
 	}
 
 	// Broadcast to global connections (pageID = 0)
 	if pageID != 0 {
 		for conn := range h.connections[0] {
-			_ = conn.WriteMessage(gws.TextMessage, payload)
+			if err := conn.WriteMessage(gws.TextMessage, payload); err != nil {
+				log.Printf("[ws] Failed to send to global connection: %v", err)
+			}
+		}
+	}
+
+	// Broadcast to ALL user connections (for inbox updates)
+	log.Printf("[ws] Broadcasting to %d user connections", len(h.userConnections))
+	for userID, conns := range h.userConnections {
+		for conn := range conns {
+			if err := conn.WriteMessage(gws.TextMessage, payload); err != nil {
+				log.Printf("[ws] Failed to send to user %d: %v", userID, err)
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -78,15 +79,21 @@ func New(repo *repository.Repository, fbAppID, fbAppSecret, fbRedirectURI, zaloA
 
 // ExchangeFacebookCode exchanges authorization code for page tokens
 func (s *Service) ExchangeFacebookCode(code string) (*FacebookConnectResult, error) {
+	log.Printf("[ExchangeFacebookCode] Starting exchange with code length: %d", len(code))
+	log.Printf("[ExchangeFacebookCode] Redirect URI: %s", s.FBRedirectURI)
+	
 	// Step 1: Exchange code for user access token
 	userTokenResp, err := s.FBClient.ExchangeCodeForToken(code, s.FBRedirectURI)
 	if err != nil {
+		log.Printf("[ExchangeFacebookCode] Exchange user token failed: %v", err)
 		return nil, fmt.Errorf("exchange user token failed: %w", err)
 	}
+	log.Printf("[ExchangeFacebookCode] Got user access token, length: %d", len(userTokenResp.AccessToken))
 
 	// Step 2: Get long-lived token (60 days)
 	longLivedResp, err := s.FBClient.GetLongLivedToken(userTokenResp.AccessToken)
 	if err != nil {
+		log.Printf("[ExchangeFacebookCode] Long-lived token exchange failed, using short-lived: %v", err)
 		// Fallback: use the short-lived token if long-lived exchange fails
 		longLivedResp = userTokenResp
 	}
@@ -94,7 +101,13 @@ func (s *Service) ExchangeFacebookCode(code string) (*FacebookConnectResult, err
 	// Step 3: Get managed pages
 	pages, err := s.FBClient.GetManagedPages(longLivedResp.AccessToken)
 	if err != nil {
+		log.Printf("[ExchangeFacebookCode] Get managed pages failed: %v", err)
 		return nil, fmt.Errorf("get managed pages failed: %w", err)
+	}
+	
+	log.Printf("[ExchangeFacebookCode] Found %d pages", len(pages))
+	for i, p := range pages {
+		log.Printf("[ExchangeFacebookCode] Page %d: ID=%s, Name=%s, Tasks=%v", i+1, p.ID, p.Name, p.Tasks)
 	}
 
 	return &FacebookConnectResult{

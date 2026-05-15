@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
-import { Conversation } from '../../types/dashboard';
-import { useConversations } from '../../hooks/useConversations';
+import { Conversation } from '../../types/messaging';
 import './InboxList.css';
 
 interface InboxListProps {
   onSelectConversation: (id: number) => void;
   activeConversationId: number | null;
+  conversations: Conversation[];
+  isLoading: boolean;
+  error: string | null;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
 }
 
 const PLATFORM_ICONS: Record<string, string> = {
@@ -36,9 +40,10 @@ const ConversationItem = React.memo(({
   isActive: boolean; 
   onClick: (id: number) => void 
 }) => {
-  // Try to determine platform from page info if available, fallback to facebook visually
   const platform = conv.page?.platform || 'facebook';
   const platformIcon = PLATFORM_ICONS[platform] || PLATFORM_ICONS['facebook'];
+  const customerName = conv.customer?.name || 'Khách hàng';
+  const customerAvatar = conv.customer?.avatar || conv.customer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(customerName)}`;
 
   return (
     <button
@@ -49,14 +54,14 @@ const ConversationItem = React.memo(({
     >
       <div className="avatar">
         <img 
-          src={conv.customer.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.customer.name)} 
-          alt={conv.customer.name} 
+          src={customerAvatar} 
+          alt={customerName} 
         />
         <img src={platformIcon} alt={platform} className="platform-badge" />
       </div>
       <div className="conversation-info">
         <div className="header">
-          <span className="customer-name">{conv.customer.name}</span>
+          <span className="customer-name">{customerName}</span>
           <span className="time">{formatTime(conv.updated_at)}</span>
         </div>
         <div className="preview">
@@ -75,14 +80,32 @@ ConversationItem.displayName = 'ConversationItem';
 export const InboxList: React.FC<InboxListProps> = ({
   onSelectConversation,
   activeConversationId,
+  conversations,
+  isLoading,
+  error,
+  searchQuery,
+  setSearchQuery,
 }) => {
-  const { conversations, loading, error, search, setSearch } = useConversations();
   const [activePlatform, setActivePlatform] = useState<string>('all');
 
   const filteredConversations = useMemo(() => {
-    if (activePlatform === 'all') return conversations;
-    return conversations.filter(c => c.page?.platform === activePlatform);
-  }, [conversations, activePlatform]);
+    let filtered = conversations;
+    
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(c => 
+        c.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Filter by platform
+    if (activePlatform !== 'all') {
+      filtered = filtered.filter(c => c.page?.platform === activePlatform);
+    }
+    
+    return filtered;
+  }, [conversations, searchQuery, activePlatform]);
 
   if (error) {
     return <div className="inbox-list-error">Error: {error}</div>;
@@ -96,8 +119,8 @@ export const InboxList: React.FC<InboxListProps> = ({
           <input
             type="text"
             placeholder="Tìm kiếm khách hàng..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="platform-filters">
@@ -123,7 +146,7 @@ export const InboxList: React.FC<InboxListProps> = ({
       </div>
 
       <div className="conversation-list" role="tablist">
-        {loading && conversations.length === 0 ? (
+        {isLoading && conversations.length === 0 ? (
           <div className="loading-state">
             <Loader2 size={24} className="spinner" />
           </div>

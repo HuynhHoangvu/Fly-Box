@@ -18,6 +18,7 @@ export interface Message {
   sender_id?: number;
   sender_type: SenderType;
   content: string;
+  content_type?: string;
   status: MessageStatus;
   created_at: string;
   metadata?: Record<string, any>;
@@ -33,9 +34,16 @@ export interface Conversation {
   page_id: number;
   customer_id: number;
   customer: {
+    id?: number;
     name: string;
+    avatar?: string;
     avatar_url?: string;
     platform: string;
+  };
+  page?: {
+    id: number;
+    platform: string;
+    page_name: string;
   };
   last_message: string;
   unread_count: number;

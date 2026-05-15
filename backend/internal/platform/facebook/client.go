@@ -215,6 +215,7 @@ func (c *Client) GetManagedPages(userAccessToken string) ([]PageAccount, error) 
 
 	params := url.Values{}
 	params.Set("access_token", userAccessToken)
+	params.Set("fields", "id,name,access_token,tasks,category,picture")
 
 	resp, err := c.httpClient.Get(apiURL + "?" + params.Encode())
 	if err != nil {

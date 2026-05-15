@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { conversationsAPI } from '../services/api';
 import { Conversation, Message, SenderType } from '../types/messaging';
-import { useWebSocket } from './useWebSocket';
 
-export const useConversations = (userId: number) => {
+export const useConversations = (userId?: number) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,11 +64,6 @@ export const useConversations = (userId: number) => {
     });
   }, [loadConversations]);
 
-  useWebSocket<Message>({
-    userId,
-    onNewMessage: handleNewMessage
-  });
-
   // Filtered & Searched list
   const filteredConversations = useMemo(() => {
     return conversations.filter(c => {
@@ -92,6 +86,7 @@ export const useConversations = (userId: number) => {
     setSearchQuery,
     activeTab,
     setActiveTab,
-    refresh: loadConversations
+    refresh: loadConversations,
+    handleNewMessage
   };
 };

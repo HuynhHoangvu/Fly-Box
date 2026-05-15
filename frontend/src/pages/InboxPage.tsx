@@ -4,27 +4,13 @@ import { ChannelConnect } from '../components/Connect/ChannelConnect';
 import { InboxList } from '../components/Inbox/InboxList';
 import { MessagePanel } from '../components/Inbox/MessagePanel';
 import { useAuthStore } from '../store/useAuthStore';
-import { pagesAPI, conversationsAPI } from '../services/api';
+import { pagesAPI } from '../services/api';
+import { useConversations } from '../hooks/useConversations';
 import './InboxPage.css';
-
-interface Customer {
-  id: number;
-  name: string;
-  platform: string;
-  avatar?: string;
-}
-
-interface Conversation {
-  id: number;
-  page_id: number;
-  customer: Customer;
-  last_message: string;
-  unread_count: number;
-  updated_at: string;
-}
 
 interface Message {
   id: number;
+  conversation_id: number;
   sender_type: string;
   content_type: string;
   content: string;
@@ -37,6 +23,24 @@ export function InboxPage() {
   const [hasPages, setHasPages] = useState(false);
   const user = useAuthStore(s => s.user);
   const userId = user ? Number(user.id) : 0;
+
+  const { 
+    conversations, 
+    isLoading: convLoading, 
+    error: convError, 
+    searchQuery, 
+    setSearchQuery, 
+    refresh: refreshConversations 
+  } = useConversations(userId);
+
+  // WebSocket for real-time updates
+  const { connected } = useWebSocket({
+    userId,
+    onNewMessage: useCallback((msg: Message) => {
+      console.log('[InboxPage] Received new message:', msg);
+      refreshConversations();
+    }, [refreshConversations])
+  });
 
   useEffect(() => {
     async function fetchData() {
@@ -65,7 +69,12 @@ export function InboxPage() {
     <div className="inbox-layout">
       <InboxList 
         activeConversationId={selectedConvId} 
-        onSelectConversation={setSelectedConvId} 
+        onSelectConversation={setSelectedConvId}
+        conversations={conversations}
+        isLoading={convLoading}
+        error={convError}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
       <MessagePanel conversationId={selectedConvId} />
     </div>
